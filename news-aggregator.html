@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>INTEL // Daily Briefing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:       #07090f;
+      --surface:  #0d1117;
+      --surface2: #131820;
+      --border:   #1e2730;
+      --text:     #c8d6e5;
+      --dim:      #4a6a8a;
+      --bright:   #e8f4ff;
+      --fox:      #cc2200;
+      --dw:       #1a4a8a;
+      --cfp:      #1a7a3a;
+      --espn:     #c44a00;
+      --tg:       #0088cc;
+      --xtrend:   #7c3aed;
+      --tesla:    #00c8b4;
+      --pin:      #f0a020;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(7,9,15,0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .h-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 26px; letter-spacing: .18em; color: var(--bright); line-height: 1;
+    }
+    .h-title span { color: var(--xtrend); }
+    .h-right { display: flex; align-items: center; gap: 14px; }
+    #last-updated { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--dim); }
+    #refresh-btn {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      padding: 7px 15px; border-radius: 4px; cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .06em;
+      transition: border-color .2s, color .2s;
+    }
+    #refresh-btn:hover { border-color: var(--tesla); color: var(--tesla); }
+    #refresh-btn:disabled { opacity: .45; cursor: default; }
+
+    /* ── LAYOUT ── */
+    main { padding: 22px 24px; max-width: 1700px; margin: 0 auto; }
+
+    /* ── PINNED ── */
+    #pinned-section { display: none; margin-bottom: 30px; }
+    #pinned-section.has-pins { display: block; }
+    .section-label {
+      font-family: 'Bebas Neue', cursive; font-size: 12px; letter-spacing: .22em;
+      color: var(--pin); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    #pinned-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 10px;
+    }
+    .pinned-card {
+      background: var(--surface); border: 1px solid var(--pin);
+      border-left: 3px solid var(--pin); border-radius: 6px; padding: 11px 13px;
+    }
+    .pc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .pc-title { font-size: 12px; font-weight: 500; color: var(--bright); text-decoration: none; line-height: 1.4; }
+    .pc-title:hover { text-decoration: underline; }
+    .pc-acts { display: flex; gap: 5px; flex-shrink: 0; }
+    .pc-upd {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--dim);
+      padding: 2px 7px; border-radius: 3px; cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace; font-size: 9px; transition: all .15s;
+    }
+    .pc-upd:hover { border-color: var(--tesla); color: var(--tesla); }
+    .pc-rm {
+      background: none; border: none; color: var(--dim); cursor: pointer;
+      font-size: 13px; padding: 1px 3px; transition: color .15s;
+    }
+    .pc-rm:hover { color: var(--fox); }
+    .pc-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--dim); }
+    .pc-note {
+      margin-top: 7px; padding: 7px 9px;
+      background: var(--surface2); border-left: 2px solid var(--pin);
+      border-radius: 3px; font-size: 11px; color: var(--text);
+    }
+
+    /* ── SOURCE GRID ── */
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 1150px) { .sources-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px)  { .sources-grid { grid-template-columns: 1fr; } main { padding: 14px; } }
+
+    .tg-group { grid-column: 1 / -1; }
+    .tg-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 1150px) { .tg-inner { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px)  { .tg-inner { grid-template-columns: 1fr; } }
+
+    /* ── CARD ── */
+    .source-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; overflow: hidden;
+      animation: fadeUp .35s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-header {
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .card-header::before {
+      content: ''; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 3px;
+    }
+    .card-name {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 15px; letter-spacing: .1em; color: var(--bright);
+    }
+    .card-count {
+      font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--dim);
+    }
+    .story-list { padding: 4px 0; }
+
+    /* accent colors */
+    .c-fox   .card-header::before { background: var(--fox);    }
+    .c-dw    .card-header::before { background: var(--dw);     }
+    .c-cfp   .card-header::before { background: var(--cfp);    }
+    .c-espn  .card-header::before { background: var(--espn);   }
+    .c-tg    .card-header::before { background: var(--tg);     }
+    .c-xtr   .card-header::before { background: var(--xtrend); }
+    .c-tsl   .card-header::before { background: var(--tesla);  }
+
+    /* ── STORY ROW ── */
+    .story-item {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 9px;
+      transition: background .12s;
+    }
+    .story-item:last-child { border-bottom: none; }
+    .story-item:hover { background: var(--surface2); }
+    .story-body { flex: 1; min-width: 0; }
+    .story-title {
+      color: var(--bright); font-size: 12px; font-weight: 500;
+      line-height: 1.4; margin-bottom: 2px;
+      display: block; text-decoration: none;
+    }
+    .story-title:hover { text-decoration: underline; }
+    .story-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--dim); }
+    .pin-btn {
+      background: none; border: none; color: var(--dim);
+      cursor: pointer; padding: 1px 3px; font-size: 12px;
+      border-radius: 3px; transition: color .12s; flex-shrink: 0; line-height: 1;
+    }
+    .pin-btn:hover { color: var(--pin); }
+    .pin-btn.is-pinned { color: var(--pin); }
+
+    /* ── TREND ROW ── */
+    .trend-item {
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      transition: background .12s;
+    }
+    .trend-item:last-child { border-bottom: none; }
+    .trend-item:hover { background: var(--surface2); }
+    .trend-rank {
+      font-family: 'Bebas Neue', cursive; font-size: 17px;
+      color: var(--xtrend); opacity: .5; width: 20px; flex-shrink: 0; line-height: 1;
+    }
+    .trend-name {
+      font-size: 12px; font-weight: 500; color: var(--bright);
+      text-decoration: none;
+    }
+    .trend-name:hover { text-decoration: underline; }
+
+    /* ── SKELETON ── */
+    .skel-wrap { padding: 10px 14px; }
+    .skel {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shim 1.4s infinite;
+      border-radius: 3px; height: 11px; margin-bottom: 7px;
+    }
+    .skel.w80 { width: 80%; } .skel.w55 { width: 55%; }
+    @keyframes shim {
+      0%   { background-position:  200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .err-msg { padding: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--dim); text-align: center; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="h-title">INTEL <span>//</span> DAILY BRIEFING</div>
+  <div class="h-right">
+    <span id="last-updated">—</span>
+    <button id="refresh-btn" onclick="loadAll()">↺ REFRESH</button>
+  </div>
+</header>
+
+<main>
+  <!-- PINNED -->
+  <section id="pinned-section">
+    <div class="section-label">📌 TRACKING</div>
+    <div id="pinned-list"></div>
+  </section>
+
+  <!-- GRID -->
+  <div class="sources-grid">
+
+    <div class="source-card c-fox" style="animation-delay:.04s">
+      <div class="card-header">
+        <span class="card-name">🦊 Fox News</span>
+        <span class="card-count" id="ct-fox">—</span>
+      </div>
+      <div class="story-list" id="sl-fox"></div>
+    </div>
+
+    <div class="source-card c-dw" style="animation-delay:.08s">
+      <div class="card-header">
+        <span class="card-name">📰 Daily Wire</span>
+        <span class="card-count" id="ct-dw">—</span>
+      </div>
+      <div class="story-list" id="sl-dw"></div>
+    </div>
+
+    <div class="source-card c-cfp" style="animation-delay:.12s">
+      <div class="card-header">
+        <span class="card-name">🗽 Citizens Free Press</span>
+        <span class="card-count" id="ct-cfp">—</span>
+      </div>
+      <div class="story-list" id="sl-cfp"></div>
+    </div>
+
+    <div class="source-card c-espn" style="animation-delay:.16s">
+      <div class="card-header">
+        <span class="card-name">🏆 ESPN</span>
+        <span class="card-count" id="ct-espn">—</span>
+      </div>
+      <div class="story-list" id="sl-espn"></div>
+    </div>
+
+    <div class="source-card c-xtr" style="animation-delay:.20s">
+      <div class="card-header">
+        <span class="card-name">𝕏 Trending USA</span>
+        <span class="card-count" id="ct-xtr">—</span>
+      </div>
+      <div class="story-list" id="sl-xtr"></div>
+    </div>
+
+    <div class="source-card c-tsl" style="animation-delay:.24s">
+      <div class="card-header">
+        <span class="card-name">⚡ Teslatsri</span>
+        <span class="card-count" id="ct-tsl">—</span>
+      </div>
+      <div class="story-list" id="sl-tsl"></div>
+    </div>
+
+    <!-- TELEGRAM ROW -->
+    <div class="tg-group" style="animation-delay:.28s">
+      <div class="section-label">✈️ TELEGRAM INTEL</div>
+      <div class="tg-inner">
+
+        <div class="source-card c-tg">
+          <div class="card-header">
+            <span class="card-name">🔭 Behold Israel</span>
+            <span class="card-count" id="ct-bi">—</span>
+          </div>
+          <div class="story-list" id="sl-bi"></div>
+        </div>
+
+        <div class="source-card c-tg">
+          <div class="card-header">
+            <span class="card-name">📡 Amit Segal</span>
+            <span class="card-count" id="ct-amit">—</span>
+          </div>
+          <div class="story-list" id="sl-amit"></div>
+        </div>
+
+        <div class="source-card c-tg">
+          <div class="card-header">
+            <span class="card-name">🇮🇱 Israel Today</span>
+            <span class="card-count" id="ct-il">—</span>
+          </div>
+          <div class="story-list" id="sl-il"></div>
+        </div>
+
+        <div class="source-card c-tg">
+          <div class="card-header">
+            <span class="card-name">💬 Pavel Durov</span>
+            <span class="card-count" id="ct-durov">—</span>
+          </div>
+          <div class="story-list" id="sl-durov"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /sources-grid -->
+</main>
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────
+const PROXY = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+const PROXY2 = url => `https://corsproxy.io/?${encodeURIComponent(url)}`;
+
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function relDate(str){
+  if(!str) return '';
+  try{
+    const d = new Date(str), now = new Date();
+    if(isNaN(d)) return '';
+    const m = Math.floor((now-d)/60000);
+    if(m < 1)  return 'just now';
+    if(m < 60) return `${m}m ago`;
+    if(m < 1440) return `${Math.floor(m/60)}h ago`;
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }catch{ return ''; }
+}
+
+function skel(n=5){
+  return `<div class="skel-wrap">${Array.from({length:n},()=>`
+    <div class="skel w80"></div><div class="skel w55" style="margin-bottom:13px"></div>`).join('')}
+  </div>`;
+}
+
+async function pfetch(url){
+  try{
+    const r = await fetch(PROXY(url),{signal:AbortSignal.timeout(10000)});
+    const d = await r.json();
+    return d.contents||null;
+  }catch{
+    try{
+      const r = await fetch(PROXY2(url),{signal:AbortSignal.timeout(10000)});
+      return await r.text();
+    }catch{ return null; }
+  }
+}
+
+// ── PINNED ─────────────────────────────────────────────────────────
+let pins = JSON.parse(localStorage.getItem('pins')||'[]');
+
+function savePin(){ localStorage.setItem('pins',JSON.stringify(pins)); }
+
+function pinStory(story){
+  if(!pins.find(s=>s.link===story.link)){
+    pins.unshift(story);
+    savePin();
+    renderPins();
+  }
+}
+
+function unpin(link){
+  pins = pins.filter(s=>s.link!==link);
+  savePin();
+  renderPins();
+}
+
+function renderPins(){
+  const sec = document.getElementById('pinned-section');
+  const lst = document.getElementById('pinned-list');
+  if(!pins.length){ sec.classList.remove('has-pins'); return; }
+  sec.classList.add('has-pins');
+  lst.innerHTML = pins.map(p=>`
+    <div class="pinned-card" id="pc-${esc(btoa(p.link).replace(/\W/g,''))}">
+      <div class="pc-top">
+        <a class="pc-title" href="${esc(p.link)}" target="_blank">${esc(p.title)}</a>
+        <div class="pc-acts">
+          <button class="pc-upd" data-link="${esc(p.link)}">↺ UPDATE</button>
+          <button class="pc-rm"  data-link="${esc(p.link)}">✕</button>
+        </div>
+      </div>
+      <div class="pc-meta">${esc(p.source)}${p.date?' · '+esc(p.date):''}</div>
+      ${p.note?`<div class="pc-note">${esc(p.note)}</div>`:''}
+    </div>`).join('');
+
+  lst.querySelectorAll('.pc-rm').forEach(b=>b.addEventListener('click',()=>unpin(b.dataset.link)));
+  lst.querySelectorAll('.pc-upd').forEach(b=>b.addEventListener('click',()=>updatePin(b.dataset.link)));
+}
+
+function updatePin(link){
+  const p = pins.find(s=>s.link===link);
+  if(!p) return;
+  p.note = `Last checked: ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})} — Tap the title to read the latest.`;
+  savePin();
+  renderPins();
+}
+
+// ── RSS ─────────────────────────────────────────────────────────────
+function parseRSS(xml, sourceName){
+  if(!xml) return [];
+  const doc = new DOMParser().parseFromString(xml,'text/xml');
+  return Array.from(doc.querySelectorAll('item')).slice(0,6).map(item=>{
+    const raw = s => s?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,'').trim()||'';
+    const title = raw(item.querySelector('title'));
+    let link = raw(item.querySelector('link'))||item.querySelector('link')?.getAttribute('href')||'';
+    const pubDate = raw(item.querySelector('pubDate'));
+    return {title,link,date:relDate(pubDate),source:sourceName};
+  }).filter(i=>i.title&&i.link);
+}
+
+// ── TELEGRAM HTML ───────────────────────────────────────────────────
+function parseTG(html, channel, sourceName){
+  if(!html) return [];
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  const wraps = Array.from(doc.querySelectorAll('.tgme_widget_message_wrap')).slice(-6).reverse();
+  return wraps.map(w=>{
+    const textEl = w.querySelector('.tgme_widget_message_text');
+    const dateEl = w.querySelector('.tgme_widget_message_date a');
+    const timeEl = w.querySelector('time');
+    if(!textEl) return null;
+    const text = textEl.textContent?.trim()||'';
+    const link = dateEl?.href||`https://t.me/s/${channel}`;
+    const dt   = timeEl?.getAttribute('datetime')||'';
+    return text.length>5 ? {title:text.length>130?text.slice(0,130)+'…':text, link, date:relDate(dt), source:sourceName} : null;
+  }).filter(Boolean);
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────
+function renderStories(slId, ctId, stories, hint){
+  const sl = document.getElementById(slId);
+  const ct = document.getElementById(ctId);
+  if(!sl) return;
+  if(!stories?.length){
+    sl.innerHTML=`<div class="err-msg">Couldn't load · <a href="https://t.me/s/${hint||''}" target="_blank" style="color:var(--dim)">open directly ↗</a></div>`;
+    if(ct) ct.textContent='—';
+    return;
+  }
+  if(ct) ct.textContent=stories.length+' items';
+  sl.innerHTML = stories.map(s=>`
+    <div class="story-item">
+      <div class="story-body">
+        <a class="story-title" href="${esc(s.link)}" target="_blank">${esc(s.title)}</a>
+        ${s.date?`<div class="story-meta">${esc(s.date)}</div>`:''}
+      </div>
+      <button class="pin-btn" title="Pin"
+        data-title="${esc(s.title)}" data-link="${esc(s.link)}"
+        data-source="${esc(s.source)}" data-date="${esc(s.date||'')}">📌</button>
+    </div>`).join('');
+
+  sl.querySelectorAll('.pin-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      pinStory({title:b.dataset.title,link:b.dataset.link,source:b.dataset.source,date:b.dataset.date});
+      b.classList.add('is-pinned');
+    });
+  });
+}
+
+function renderTrending(slId, ctId, items){
+  const sl = document.getElementById(slId);
+  const ct = document.getElementById(ctId);
+  if(!sl) return;
+  if(!items?.length){
+    sl.innerHTML='<div class="err-msg">Couldn\'t load trends</div>';
+    if(ct) ct.textContent='—';
+    return;
+  }
+  if(ct) ct.textContent=items.length+' topics';
+  sl.innerHTML = items.map((t,i)=>`
+    <div class="trend-item">
+      <span class="trend-rank">${i+1}</span>
+      <a class="trend-name" href="${esc(t.link)}" target="_blank">${esc(t.name)}</a>
+    </div>`).join('');
+}
+
+// ── LOADERS ─────────────────────────────────────────────────────────
+async function loadRSS(slId, ctId, feedUrl, source){
+  document.getElementById(slId).innerHTML = skel();
+  const xml = await pfetch(feedUrl);
+  renderStories(slId, ctId, parseRSS(xml, source));
+}
+
+async function loadTG(slId, ctId, channel, source){
+  document.getElementById(slId).innerHTML = skel();
+  const html = await pfetch(`https://t.me/s/${channel}`);
+  renderStories(slId, ctId, parseTG(html, channel, source), channel);
+}
+
+async function loadTrending(){
+  document.getElementById('sl-xtr').innerHTML = skel(10);
+  const html = await pfetch('https://trends24.in/united-states/');
+  if(!html){ document.getElementById('sl-xtr').innerHTML='<div class="err-msg">Couldn\'t load</div>'; return; }
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  // trends24 stores trend lists in ol.trend-card__list
+  const els = doc.querySelectorAll('.trend-card__list li a, ol li a');
+  const seen = new Set(), items = [];
+  for(const el of els){
+    const name = el.textContent.trim();
+    if(name && !seen.has(name)){
+      seen.add(name);
+      items.push({name, link:`https://x.com/search?q=${encodeURIComponent(name)}&src=trend_click`});
+    }
+    if(items.length>=10) break;
+  }
+  renderTrending('sl-xtr','ct-xtr',items);
+}
+
+async function loadTeslatsri(){
+  document.getElementById('sl-tsl').innerHTML = skel();
+  // Try a public nitter instance for RSS
+  const nitterInstances = [
+    'https://nitter.privacydev.net/Teslatsri/rss',
+    'https://nitter.poast.org/Teslatsri/rss',
+    'https://nitter.cz/Teslatsri/rss'
+  ];
+  for(const url of nitterInstances){
+    const xml = await pfetch(url);
+    if(xml && xml.includes('<item>')){
+      const stories = parseRSS(xml,'@Teslatsri');
+      renderStories('sl-tsl','ct-tsl',stories);
+      return;
+    }
+  }
+  // Fallback
+  const sl = document.getElementById('sl-tsl');
+  const ct = document.getElementById('ct-tsl');
+  sl.innerHTML=`<div class="story-item"><div class="story-body">
+    <a class="story-title" href="https://x.com/Teslatsri" target="_blank">Open @Teslatsri on X ↗</a>
+    <div class="story-meta">X API unavailable on free tier — direct link</div>
+  </div></div>`;
+  ct.textContent='direct link';
+}
+
+// ── LOAD ALL ────────────────────────────────────────────────────────
+async function loadAll(){
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true; btn.textContent = '↺ Loading…';
+  document.getElementById('last-updated').textContent = 'Updating…';
+
+  await Promise.allSettled([
+    loadRSS('sl-fox',  'ct-fox',  'https://feeds.foxnews.com/foxnews/latest',      'Fox News'),
+    loadRSS('sl-dw',   'ct-dw',   'https://www.dailywire.com/feeds/rss.xml',        'Daily Wire'),
+    loadRSS('sl-cfp',  'ct-cfp',  'https://citizensfreepresss.com/feed/',           'Citizens Free Press'),
+    loadRSS('sl-espn', 'ct-espn', 'https://www.espn.com/espn/rss/news',            'ESPN'),
+    loadTrending(),
+    loadTeslatsri(),
+    loadTG('sl-bi',   'ct-bi',   'beholdisraelchannel', 'Behold Israel'),
+    loadTG('sl-amit', 'ct-amit', 'amitseg',             'Amit Segal'),
+    loadTG('sl-il',   'ct-il',   'ILtoday',             'Israel Today'),
+    loadTG('sl-durov','ct-durov','durov',                'Pavel Durov'),
+  ]);
+
+  const t = new Date();
+  document.getElementById('last-updated').textContent =
+    'Updated ' + t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  btn.disabled = false; btn.textContent = '↺ REFRESH';
+}
+
+// ── INIT ────────────────────────────────────────────────────────────
+renderPins();
+loadAll();
+</script>
+</body>
+</html>
